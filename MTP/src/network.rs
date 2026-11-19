@@ -1,8 +1,14 @@
-use std::{net::{Ipv4Addr, SocketAddr, UdpSocket,hostname}};
+use std::{net::{Ipv4Addr, SocketAddr, UdpSocket}};
+use gethostname::gethostname;
 
-
+/// Generate the format of a alive packet.
 fn generate_hearbeat_packet(){
-    let h = hostname();
+    let h = gethostname();
+    // We need to generate the mark of a specific host so we know whos connected
+    // as the heartbeat should be pretty slow we will use the same information as the "up" contact list. 
+    // I am thinking we can use MAC signed with private key sending to a specific host 
+    // as the key will be the way we allow communication betwee hosts anyway
+    
 }
 
 fn generate_socket_bind(bind: Ipv4Addr , port:u16) -> UdpSocket{
@@ -15,25 +21,25 @@ fn generate_socket_bind(bind: Ipv4Addr , port:u16) -> UdpSocket{
 }
 
 
-fn send_udp_packet(socket:UdpSocket, addr: SocketAddr, message:&str) -> u8{
+fn send_udp_packet(socket:&UdpSocket, addr: SocketAddr, message:&str) -> bool{
     /* 
     Send a single UDP packet to  a specific address 
     200 = message sent succesfully
     0 = message error
     */
-    match socket.send_to(as_bytes(message), addr){
+    match socket.send_to(message.as_bytes(), addr){
         Ok(res) => {
-            return 200;
+            return true;
         }
         Err(e) => {
-            return 0;
+            return false;
         }
     }
 }
 
 
 // TODO : make a conf file seting up the buffer size for the UDP packets
-fn heart_beat_listener(socket:UdpSocket) -> std::io::Result<()>{
+fn heart_beat_listener(socket:&UdpSocket) -> std::io::Result<()>{
     /*
     Bind a UDP port to listen and answer back to heart_beat This will listen on the port and look for a specific formated packet 
     If the host whom we receive the packet from has pass a arbitrary time gap we answer back with our own heart beat automatically. 
@@ -57,11 +63,14 @@ fn heart_beat_listener(socket:UdpSocket) -> std::io::Result<()>{
 
         // TODO : modify this so we send back our own information to the host ( if a valid node ) so he knows we are up as well if last contact longer then configuration
         match send_udp_packet(socket, src, "alive") {
-            200 => continue,
-            0 => eprint!("heartbeat answer with {src} failed to be sent. Error 0")
-
+            true => continue,
+            false => eprint!("heartbeat answer with {src} failed to be sent. Error 0"),
         }
 
     }
 }
 
+fn hear_beat_sender(socket:UdpSocket) -> std::io::Result<()>{
+    return std::io::Result<()>;
+
+}
